@@ -1,0 +1,38 @@
+# Version control
+.git/
+.gitignore
+
+# Python dev artifacts
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Tests (not needed at runtime)
+tests/
+requirements-dev.txt
+
+# Secrets and local config
+.env
+.env.local
+
+# SQLite (runtime-generated, use volume)
+*.db
+*.db-shm
+*.db-wal
+
+# Frontend build (served separately in dev; build into static and add to attacker for prod)
+frontend/
+
+# Docs and local tooling
+docs/
+*.md
+LICENSE
+.dockerignore
+
+# Runtime output directories (mounted as volumes)
+logs/
+reports/
+data/

@@ -1,0 +1,12 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+COPY common/ common/
+COPY target_system/ target_system/
+
+EXPOSE 8001
+CMD ["uvicorn", "target_system.main:app", "--host", "0.0.0.0", "--port", "8001"]

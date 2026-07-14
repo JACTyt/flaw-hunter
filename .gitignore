@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+venv/
+.venv/
+env/
+.Python
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Environment — never commit secrets
+.env
+.env.local
+.env.*.local
+
+# SQLite database
+*.db
+*.db-shm
+*.db-wal
+
+# Runtime output (keep dirs, ignore content)
+logs/*.jsonl
+logs/*.json
+reports/*.json
+data/
+
+# Node / frontend
+node_modules/
+frontend/dist/
+frontend/.vite/
+frontend/node_modules/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
