@@ -29,7 +29,8 @@ class ClaudeClient:
 
 
 class OllamaClient:
-    def __init__(self, base_url: str, model: str, read_timeout: float = 300.0):
+    def __init__(self, base_url: str, model: str, read_timeout: float = 300.0,
+                 num_predict: int = 256):
         # Short connect timeout so we fail fast if Ollama isn't running.
         # Read timeout prevents indefinite hang when Ollama is unloading/reloading a model.
         self._client = httpx.Client(
@@ -37,6 +38,10 @@ class OllamaClient:
             timeout=httpx.Timeout(connect=10.0, read=read_timeout, write=None, pool=None),
         )
         self._model = model
+        # Bound output length: payloads and JSON verdicts are short. Without a cap,
+        # reasoning models (e.g. Qwen3) emit long hidden think-traces and can exceed
+        # the read timeout on modest hardware.
+        self._num_predict = num_predict
 
     def complete(self, messages: list[Message], system: str = "") -> str:
         payload = {
@@ -44,8 +49,15 @@ class OllamaClient:
             "messages": [{"role": "system", "content": system}]
                         + [{"role": m.role, "content": m.content} for m in messages],
             "stream": False,
+            "think": False,
+            "options": {"num_predict": self._num_predict},
         }
         response = self._client.post("/api/chat", json=payload)
+        # Reasoning-capable models accept "think"; older/non-thinking models 400 on it.
+        # Retry without the flag so the client works across model families.
+        if response.status_code == 400:
+            payload.pop("think", None)
+            response = self._client.post("/api/chat", json=payload)
         response.raise_for_status()
         return response.json()["message"]["content"]
 

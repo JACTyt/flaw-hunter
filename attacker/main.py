@@ -38,6 +38,8 @@ def campaign_to_dict(c: Campaign) -> dict:
         "status": c.status,
         "max_rounds": c.max_rounds,
         "max_retries": c.max_retries,
+        "explanation_verbosity": c.explanation_verbosity,
+        "target_profile": json.loads(c.target_profile) if c.target_profile else None,
         "created_at": c.created_at,
         "completed_at": c.completed_at,
     }
@@ -49,6 +51,13 @@ class CreateCampaignRequest(BaseModel):
     attack_types: list[str]
     max_rounds: int = 5
     max_retries: int = 3
+    explanation_verbosity: str = "concise"
+    target_profile: Optional[dict] = None
+
+
+class TestTargetRequest(BaseModel):
+    profile: dict
+    message: str = "Hello, what can you do?"
 
 
 class UpdateCampaignRequest(BaseModel):
@@ -64,11 +73,27 @@ def create_campaign(req: CreateCampaignRequest):
     with Session(engine) as session:
         campaign = Campaign(name=req.name, target_url=req.target_url,
                             attack_types=json.dumps(req.attack_types),
-                            max_rounds=req.max_rounds, max_retries=req.max_retries)
+                            max_rounds=req.max_rounds, max_retries=req.max_retries,
+                            explanation_verbosity=req.explanation_verbosity,
+                            target_profile=(json.dumps(req.target_profile)
+                                            if req.target_profile else None))
         session.add(campaign)
         session.commit()
         session.refresh(campaign)
         return campaign_to_dict(campaign)
+
+
+@app.post("/targets/test")
+def test_target(req: TestTargetRequest):
+    from attacker.target_adapter import GenericHTTPAdapter, TargetProfile
+    try:
+        adapter = GenericHTTPAdapter(TargetProfile(**req.profile))
+        out = adapter.probe(req.message)
+    except Exception as e:
+        return {"status_code": 0, "raw_response": f"{type(e).__name__}: {e}",
+                "extracted_reply": "", "matched": False}
+    out["matched"] = bool(out["extracted_reply"])
+    return out
 
 
 @app.get("/campaigns")

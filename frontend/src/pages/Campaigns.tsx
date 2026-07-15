@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom'
 import { Plus, RotateCcw, Pencil, Trash2 } from 'lucide-react'
 import { listCampaigns, createCampaign, deleteCampaign, updateCampaign, restartCampaign } from '../api'
 import type { Campaign, AttackType, CreateCampaignPayload } from '../types'
+import { TargetProfileBuilder } from '../components/TargetProfileBuilder'
 
 const ATTACK_TYPES: AttackType[] = [
   'prompt_injection', 'goal_hijacking', 'tool_misuse', 'data_exfiltration',
@@ -22,6 +23,7 @@ const emptyForm: CreateCampaignPayload = {
   attack_types: ['prompt_injection'],
   max_rounds: 5,
   max_retries: 3,
+  explanation_verbosity: 'concise',
 }
 
 export function Campaigns() {
@@ -54,6 +56,7 @@ export function Campaigns() {
       attack_types: c.attack_types,
       max_rounds: c.max_rounds,
       max_retries: c.max_retries,
+      explanation_verbosity: c.explanation_verbosity,
     })
     setEditingId(c.id)
     setShowForm(true)
@@ -167,7 +170,22 @@ export function Campaigns() {
                 onChange={(e) => setForm({ ...form, max_retries: Number(e.target.value) })}
               />
             </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Explanation</label>
+              <select
+                className="border rounded px-3 py-2 text-sm"
+                value={form.explanation_verbosity}
+                onChange={(e) => setForm({ ...form, explanation_verbosity: e.target.value as 'concise' | 'full' })}
+              >
+                <option value="concise">Concise</option>
+                <option value="full">Full writeup</option>
+              </select>
+            </div>
           </div>
+          <TargetProfileBuilder
+            value={form.target_profile ?? null}
+            onChange={(p) => setForm((f) => ({ ...f, target_profile: p }))}
+          />
           <div className="flex gap-3 pt-2">
             <button
               type="submit"

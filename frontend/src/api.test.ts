@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import axios from 'axios'
-import { listCampaigns, getCampaign, createCampaign, startCampaign, stopCampaign, getReport } from './api'
+import { listCampaigns, getCampaign, createCampaign, startCampaign, stopCampaign, getReport, testTarget } from './api'
 
 vi.mock('axios')
 const mockedAxios = vi.mocked(axios, true)
@@ -19,11 +19,22 @@ describe('API client', () => {
     const payload = {
       name: 'test', target_url: 'http://t',
       attack_types: ['prompt_injection'] as const, max_rounds: 3, max_retries: 2,
+      explanation_verbosity: 'concise' as const,
     }
     mockedAxios.post = vi.fn().mockResolvedValue({ data: { id: 1, ...payload, status: 'pending' } })
     const result = await createCampaign(payload)
     expect(mockedAxios.post).toHaveBeenCalledWith('/api/campaigns', payload)
     expect(result.id).toBe(1)
+  })
+
+  it('testTarget posts profile and message', async () => {
+    const profile = { method: 'POST', url: 'http://x/c', headers: {},
+      body_template: { q: '{message}' }, response_path: 'reply', tool_calls_path: null }
+    mockedAxios.post = vi.fn().mockResolvedValue({ data: { status_code: 200,
+      raw_response: '{}', extracted_reply: 'hi', matched: true } })
+    const r = await testTarget(profile, 'ping')
+    expect(mockedAxios.post).toHaveBeenCalledWith('/api/targets/test', { profile, message: 'ping' })
+    expect(r.matched).toBe(true)
   })
 
   it('startCampaign calls POST /api/campaigns/5/start', async () => {

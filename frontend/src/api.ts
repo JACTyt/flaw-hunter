@@ -1,6 +1,6 @@
 import axios from 'axios'
 import { useEffect, useState } from 'react'
-import type { Campaign, Report, CreateCampaignPayload, UpdateCampaignPayload, AttackEvent, AttackAnalysisResult, BatchAnalysisStatus } from './types'
+import type { Campaign, Report, CreateCampaignPayload, UpdateCampaignPayload, AttackEvent, AttackAnalysisResult, BatchAnalysisStatus, TargetProfile, TestTargetResult } from './types'
 
 export async function listCampaigns(): Promise<Campaign[]> {
   const res = await axios.get('/api/campaigns')
@@ -14,6 +14,11 @@ export async function getCampaign(id: number): Promise<Campaign> {
 
 export async function createCampaign(payload: CreateCampaignPayload): Promise<Campaign> {
   const res = await axios.post('/api/campaigns', payload)
+  return res.data
+}
+
+export async function testTarget(profile: TargetProfile, message: string): Promise<TestTargetResult> {
+  const res = await axios.post('/api/targets/test', { profile, message })
   return res.data
 }
 

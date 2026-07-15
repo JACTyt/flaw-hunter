@@ -1,7 +1,7 @@
 import json
 import threading
 from dataclasses import dataclass, asdict, field
-from datetime import datetime
+from datetime import datetime, UTC
 from typing import Callable, TypeVar
 from sqlmodel import Session
 
@@ -10,9 +10,10 @@ from attacker.executor import execute
 from attacker.analyzer import analyze, generate_campaign_analysis
 from attacker.memory import CampaignMemory, AttackRecord
 from attacker.recon import recon
-from attacker.target_adapter import TargetAdapter
+from attacker.target_adapter import build_adapter
 from attacker.models import Campaign, Attack as DBAttack, Result, Report, CampaignStatus
 from common.llm_client import get_llm_client
+from common.config import settings as cfg
 from evaluation.metrics import compute_metrics
 
 T = TypeVar("T")
@@ -80,7 +81,7 @@ def _error_event(campaign_id: int, attack_type: str, round_num: int, attempt: in
         round=round_num, attempt=attempt, payload="",
         response=f"{type(exc).__name__}: {exc}",
         success=False, evidence="Attack failed due to LLM/network error",
-        severity="info", timestamp=datetime.utcnow().isoformat(), error=True,
+        severity="info", timestamp=datetime.now(UTC).isoformat(), error=True,
     ))
 
 
@@ -92,7 +93,7 @@ def run_campaign(
 ) -> None:
     llm = get_llm_client()
     attack_types: list[str] = json.loads(campaign.attack_types)
-    adapter = TargetAdapter(base_url=campaign.target_url)
+    adapter = build_adapter(campaign)
     memory = CampaignMemory()
     surface = recon(adapter)
 
@@ -122,7 +123,11 @@ def run_campaign(
 
                 try:
                     raw = _call(lambda: execute(attack.payload, adapter), should_stop)
-                    analysis = _call(lambda: analyze(raw, attack_type, llm), should_stop)
+                    analysis = _call(lambda: analyze(raw, attack_type, llm,
+                                                     canary=cfg.canary,
+                                                     known_prompt=cfg.known_system_prompt,
+                                                     verbosity=campaign.explanation_verbosity),
+                                     should_stop)
                 except _StopRequested:
                     stopped = True
                     break
@@ -147,7 +152,7 @@ def run_campaign(
                     round=round_num, attempt=attempt, payload=attack.payload,
                     response=raw.response_text, success=analysis.success,
                     evidence=analysis.evidence, severity=analysis.severity,
-                    timestamp=datetime.utcnow().isoformat(),
+                    timestamp=datetime.now(UTC).isoformat(),
                 )))
 
                 if analysis.success:
@@ -182,7 +187,7 @@ def run_campaign(
 
     # Commit completion status first so the UI unblocks immediately
     campaign.status = CampaignStatus.stopped if stopped else CampaignStatus.completed
-    campaign.completed_at = datetime.utcnow()
+    campaign.completed_at = datetime.now(UTC)
     session.add(campaign)
     session.commit()
 

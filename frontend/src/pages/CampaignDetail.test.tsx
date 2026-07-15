@@ -11,6 +11,7 @@ const campaign: Campaign = {
   id: 3, name: 'Detail Test', target_url: 'http://t',
   attack_types: ['prompt_injection'],
   status: 'running', max_rounds: 5, max_retries: 3,
+  explanation_verbosity: 'concise',
   created_at: '2026-05-24', completed_at: null,
 }
 
