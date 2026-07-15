@@ -11,7 +11,8 @@ const campaigns: Campaign[] = [
   {
     id: 1, name: 'Alpha', target_url: 'http://localhost:8001',
     attack_types: ['prompt_injection'], status: 'completed',
-    max_rounds: 3, max_retries: 2, created_at: '2026-05-24', completed_at: '2026-05-24',
+    max_rounds: 3, max_retries: 2, explanation_verbosity: 'concise',
+    created_at: '2026-05-24', completed_at: '2026-05-24',
   },
 ]
 
@@ -35,7 +36,8 @@ describe('Campaigns', () => {
     vi.mocked(api.createCampaign).mockResolvedValue({
       id: 2, name: 'Beta', target_url: 'http://t',
       attack_types: ['goal_hijacking'], status: 'pending',
-      max_rounds: 3, max_retries: 2, created_at: '2026-05-24', completed_at: null,
+      max_rounds: 3, max_retries: 2, explanation_verbosity: 'concise',
+      created_at: '2026-05-24', completed_at: null,
     })
     render(<MemoryRouter><Campaigns /></MemoryRouter>)
     await waitFor(() => screen.getByText('New Campaign'))

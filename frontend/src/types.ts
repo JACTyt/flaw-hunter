@@ -7,6 +7,23 @@ export type AttackType =
 export type CampaignStatus = 'pending' | 'running' | 'completed' | 'stopped' | 'failed'
 export type Severity = 'critical' | 'high' | 'medium' | 'low' | 'info'
 
+export interface TargetProfile {
+  method: string
+  url: string
+  headers: Record<string, string>
+  body_template: unknown
+  response_path: string
+  tool_calls_path: string | null
+  timeout?: number
+}
+
+export interface TestTargetResult {
+  status_code: number
+  raw_response: string
+  extracted_reply: string
+  matched: boolean
+}
+
 export interface Campaign {
   id: number
   name: string
@@ -15,6 +32,8 @@ export interface Campaign {
   status: CampaignStatus
   max_rounds: number
   max_retries: number
+  explanation_verbosity: 'concise' | 'full'
+  target_profile?: TargetProfile | null
   created_at: string
   completed_at: string | null
 }
@@ -105,4 +124,6 @@ export interface CreateCampaignPayload {
   attack_types: AttackType[]
   max_rounds: number
   max_retries: number
+  explanation_verbosity: 'concise' | 'full'
+  target_profile?: TargetProfile | null
 }

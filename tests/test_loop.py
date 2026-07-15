@@ -42,7 +42,7 @@ def test_run_campaign_completes():
     campaign = _make_campaign(session)
     events = []
     with patch("attacker.loop.get_llm_client", return_value=_good_llm()), \
-         patch("attacker.loop.TargetAdapter", return_value=_mock_adapter()):
+         patch("attacker.loop.build_adapter", return_value=_mock_adapter()):
         run_campaign(campaign, session, emit=events.append)
     session.refresh(campaign)
     assert campaign.status == CampaignStatus.completed and len(events) >= 1
@@ -53,6 +53,6 @@ def test_run_campaign_emits_required_fields():
     campaign = _make_campaign(session)
     events = []
     with patch("attacker.loop.get_llm_client", return_value=_good_llm()), \
-         patch("attacker.loop.TargetAdapter", return_value=_mock_adapter()):
+         patch("attacker.loop.build_adapter", return_value=_mock_adapter()):
         run_campaign(campaign, session, emit=events.append)
     assert all({"attack_type", "success", "payload"}.issubset(e.keys()) for e in events)
